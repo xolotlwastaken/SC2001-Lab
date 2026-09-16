@@ -1,0 +1,9 @@
+experiment,algorithm,n,threshold,seed,repetition,key_comparisons,cpu_seconds,elapsed_seconds,correct
+validation,hybrid,10000000,64,1101,0,281227693,,,true
+validation,merge,10000000,0,1101,0,220099143,,,true
+validation,hybrid,10000000,64,1101,3,,0.403585,0.411207375,true
+validation,merge,10000000,0,1101,1,,0.450102,0.451687375,true
+validation,hybrid,10000000,64,1101,2,,0.389874,0.390993125,true
+validation,merge,10000000,0,1101,2,,0.442845,0.443168292,true
+validation,merge,10000000,0,1101,3,,0.443864,0.444144375,true
+validation,hybrid,10000000,64,1101,1,,0.386809,0.387060083,true

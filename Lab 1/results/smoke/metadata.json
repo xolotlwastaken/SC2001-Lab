@@ -1,0 +1,32 @@
+{
+  "smoke": true,
+  "fingerprints": {
+    "build/benchmark": "4cbb33d1252c7d7f11525c468b1fe6e1db65724ea6a6bad0c6c23b8f3980ce2e",
+    "src/sorting.hpp": "d59346f845c6419fe6e89a5fb3d0b052c941f8a18fb98ecc73b2e80d5fa272be",
+    "src/benchmark.cpp": "0b9e112571d7a6c691b32b7b43708b7103c14ff000e0541ddd0359caadcfb643",
+    "scripts/run_experiments.py": "08cf5c1ceedf65b5f8900a003076efd73422203e9b6f002fa61c86efa4dfedfa",
+    "Makefile": "619ddf68a5becd66e43cc869b1b833d94b91b04205cfe44eddcb299c4db2bd33"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.0.123.102)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "flags": "-std=c++17 -O3 -DNDEBUG -Wall -Wextra -Wpedantic",
+  "rng": "std::mt19937; rejection at floor(2^32/10000000)*10000000; 1+v%10000000",
+  "tuning_seeds": [
+    101,
+    202,
+    303,
+    404,
+    505
+  ],
+  "validation_seeds": [
+    1101,
+    1202,
+    1303,
+    1404,
+    1505
+  ],
+  "cpu": "Apple M5",
+  "repetitions": 3,
+  "x": 10000000
+}

@@ -1,0 +1,6 @@
+Input:  7 2 5 1 6 3 4 2 
+Hybrid S=4: two insertion-sort leaves of length 4, then merge.
+Merge  S=0: 1 2 2 3 4 5 6 7  | key comparisons=17
+Hybrid S=1: 1 2 2 3 4 5 6 7  | key comparisons=17
+Hybrid S=4: 1 2 2 3 4 5 6 7  | key comparisons=19
+Hybrid S=8: 1 2 2 3 4 5 6 7  | key comparisons=22

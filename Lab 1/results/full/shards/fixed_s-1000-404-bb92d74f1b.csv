@@ -1,0 +1,5 @@
+experiment,algorithm,n,threshold,seed,repetition,key_comparisons,cpu_seconds,elapsed_seconds,correct
+fixed_s,hybrid,1000,32,404,0,13384,,,true
+fixed_s,hybrid,1000,32,404,1,,1.4e-05,1.4e-05,true
+fixed_s,hybrid,1000,32,404,3,,1.2e-05,1.2125e-05,true
+fixed_s,hybrid,1000,32,404,2,,1.1e-05,1.1917e-05,true
