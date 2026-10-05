@@ -1,0 +1,1 @@
+PASS: 450 configuration/seed groups; 2700 rows; all required sizes, thresholds, repeats, disjoint seeds, counts, timings, and locked S=192 verified.

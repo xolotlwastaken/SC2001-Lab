@@ -18,18 +18,47 @@ JAVA_SOURCES = [
     ROOT / 'src' / 'Benchmark.java',
 ]
 SIZES = [1000, 3000, 10000, 30000, 100000, 300000, 1000000, 3000000, 10000000]
-SWEEP = [1, 2, 4, 8, 16, 24, 32, 48, 64, 96, 128]
+SWEEP = [1, 2, 4, 8, 16, 24, 32, 48, 64, 96, 128, 192, 256,
+         384, 512, 768, 1024, 1536, 2048]
 TUNING = [101, 202, 303, 404, 505]
 VALIDATION = [1101, 1202, 1303, 1404, 1505]
 FIELDS = ['experiment', 'algorithm', 'n', 'threshold', 'seed', 'repetition',
           'key_comparisons', 'cpu_seconds', 'elapsed_seconds', 'correct']
+
+def leaf_signature(n, threshold):
+    """Return the recursive leaf-size multiset without allocating an input array."""
+    pending = [n]
+    counts = {}
+    while pending:
+        size = pending.pop()
+        if size <= threshold or size <= 1:
+            counts[size] = counts.get(size, 0) + 1
+        else:
+            left = size // 2
+            pending.extend((left, size - left))
+    return tuple(sorted(counts.items()))
+
+def structural_candidates(n, low, high):
+    """Keep one threshold for each distinct recursion partition in the interval."""
+    candidates = []
+    previous = None
+    for threshold in range(low, high + 1):
+        signature = leaf_signature(n, threshold)
+        if signature != previous:
+            candidates.append(threshold)
+            previous = signature
+    return candidates
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--smoke', action='store_true', help='Small pipeline check; not lab evidence')
     parser.add_argument('--output', type=Path, default=ROOT / 'results' / 'full')
     parser.add_argument('--cpu-label', help='Verified CPU model when sandbox blocks sysctl')
+    parser.add_argument('--repetitions', type=int, default=5,
+                        help='Timed repetitions per seed and configuration (default: 5)')
     args = parser.parse_args()
+    if args.repetitions < 1:
+        parser.error('--repetitions must be positive')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
     shards = out / 'shards'
@@ -50,7 +79,8 @@ def main():
               'timer': 'ThreadMXBean current-thread CPU time; System.nanoTime elapsed',
               'tuning_seeds': TUNING, 'validation_seeds': VALIDATION,
               'cpu': args.cpu_label or platform.processor() or 'unknown; supply --cpu-label',
-              'repetitions': 3, 'x': 10000000}
+              'repetitions': args.repetitions, 'x': 10000000,
+              'coarse_thresholds': SWEEP}
     metadata = out/'metadata.json'
     if metadata.exists() and json.loads(metadata.read_text()) != config:
         raise SystemExit('Configuration/build changed: choose a new output directory.')
@@ -70,11 +100,12 @@ def main():
             if not path.exists():
                 print(f'{name}: n={n:,}, seed={seed}, S={thresholds}', flush=True)
                 order_seed = int(hashlib.sha256(f'{name}:{n}:{seed}'.encode()).hexdigest()[:8],16)
-                result = subprocess.run(benchmark_command + [str(n), str(seed), '3',
+                result = subprocess.run(benchmark_command + [str(n), str(seed), str(args.repetitions),
                                          ','.join(map(str,thresholds)), str(order_seed)],
                                         text=True, capture_output=True, check=True)
                 rows = list(csv.DictReader(io.StringIO(','.join(FIELDS[1:])+'\n'+result.stdout)))
-                if len(rows) != len(thresholds)*4 or any(r['correct']!='true' for r in rows):
+                expected_rows = len(thresholds) * (args.repetitions + 1)
+                if len(rows) != expected_rows or any(r['correct']!='true' for r in rows):
                     raise RuntimeError('Incomplete or incorrect benchmark output')
                 temporary = path.with_suffix('.tmp')
                 with temporary.open('w',newline='') as f:
@@ -99,13 +130,19 @@ def main():
     coarse = scores({'coarse'},target)
     winner = min(coarse,key=lambda s:(coarse[s],s))
     i = SWEEP.index(winner)
+    if i == 0 or i == len(SWEEP) - 1:
+        raise RuntimeError(
+            f'Coarse winner S={winner} is on the search boundary; extend SWEEP.')
     low, high = SWEEP[max(0,i-1)], SWEEP[min(len(SWEEP)-1,i+1)]
-    # Reuse coarse observations for thresholds already measured; do not double-weight them.
-    refined = [s for s in range(low,high+1) if s not in SWEEP]
-    if refined: run_phase('refine',[(target,seed,refined) for seed in tuning])
-    candidates = scores({'coarse','refine'},target)
+    # Retest one representative from every distinct recursion partition in a
+    # single randomized phase. This avoids comparing identical-work thresholds
+    # or mixing earlier coarse timing with later refinement timing.
+    refined = structural_candidates(target, low, high)
+    run_phase('refine',[(target,seed,refined) for seed in tuning])
+    candidates = scores({'refine'},target)
     selected = min(candidates,key=lambda s:(candidates[s],s))
     selection = {'target_n':target, 'coarse_winner':winner, 'refinement_interval':[low,high],
+                 'refinement_candidates': refined,
                  'selected_s':selected, 'objective':'median across seeds of median repeated CPU seconds',
                  'coarse_winners_by_n':{str(n):min(scores({'coarse'},n),key=lambda s:(scores({'coarse'},n)[s],s))
                                         for n in tuning_sizes},

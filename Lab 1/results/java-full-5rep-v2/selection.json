@@ -1,0 +1,26 @@
+{
+  "target_n": 10000000,
+  "coarse_winner": 256,
+  "refinement_interval": [
+    192,
+    384
+  ],
+  "refinement_candidates": [
+    192,
+    305,
+    306
+  ],
+  "selected_s": 192,
+  "objective": "median across seeds of median repeated CPU seconds",
+  "coarse_winners_by_n": {
+    "10000": 192,
+    "100000": 192,
+    "1000000": 96,
+    "10000000": 256
+  },
+  "candidate_cpu_seconds": {
+    "192": 0.654621,
+    "305": 0.687977,
+    "306": 0.695526
+  }
+}

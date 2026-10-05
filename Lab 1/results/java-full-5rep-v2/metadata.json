@@ -1,0 +1,55 @@
+{
+  "smoke": false,
+  "fingerprints": {
+    "build/Benchmark.class": "97b7fc202452ea26c73e2cd553a33a3d638023aa2b4451f41137f42433e2dbce",
+    "src/Sorting.java": "6d6afd682d5d8e72336f886752aacd16f35e7c879194fcbeca9dccc446b9e4d5",
+    "src/MersenneTwister.java": "101f17ffb5fc5f8f1c3bd3f4a313a8ac1e0cad4a682914c6767297ddea4c651f",
+    "src/Benchmark.java": "82a2a46c0bdca2527e360f022eacbed28e2581df8d81182bb9fe7607d5eb057d",
+    "scripts/run_experiments.py": "ed346b54a18083f2b4fd87aa171f3c124657aa9b7d70757bfda8e2d2595919b8",
+    "Makefile": "6748016332c56157f0efb6c0f86a12ec4fb270a76b242761dfa1152fd38982fa"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "compiler": "openjdk version \"26.0.2.1\" 2026-08-18\nOpenJDK Runtime Environment Temurin-26.0.2.1+1 (build 26.0.2.1+1)\nOpenJDK 64-Bit Server VM Temurin-26.0.2.1+1 (build 26.0.2.1+1, mixed mode, sharing)",
+  "flags": "javac --release 17",
+  "rng": "MT19937; rejection at floor(2^32/10000000)*10000000; 1+v%10000000",
+  "timer": "ThreadMXBean current-thread CPU time; System.nanoTime elapsed",
+  "tuning_seeds": [
+    101,
+    202,
+    303,
+    404,
+    505
+  ],
+  "validation_seeds": [
+    1101,
+    1202,
+    1303,
+    1404,
+    1505
+  ],
+  "cpu": "Apple M5",
+  "repetitions": 5,
+  "x": 10000000,
+  "coarse_thresholds": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    24,
+    32,
+    48,
+    64,
+    96,
+    128,
+    192,
+    256,
+    384,
+    512,
+    768,
+    1024,
+    1536,
+    2048
+  ]
+}

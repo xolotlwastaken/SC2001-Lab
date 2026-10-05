@@ -87,16 +87,11 @@ def main():
     save(fig,'04_threshold_comparisons')
 
     target=selection['target_n']; selected=selection['selected_s']
-    tuned=df[df.experiment.isin(['coarse','refine']) & df.n.eq(target)]
+    tuned=df[df.experiment.eq('refine') & df.n.eq(target)]
     refined=summary(tuned,['threshold'],'cpu_seconds')
     low,high=selection['refinement_interval']
     fig,ax=plt.subplots(figsize=(10,5))
-    newly_measured=summary(tuned[tuned.experiment.eq('refine')],['threshold'],'cpu_seconds')
-    if not newly_measured.empty: curve(ax,newly_measured,'threshold',label='Later integer-refinement phase')
-    reused=summary(tuned[tuned.experiment.eq('coarse')],['threshold'],'cpu_seconds')
-    reused=reused[reused.threshold.between(low,high)]
-    ax.errorbar(reused.threshold,reused['median'],yerr=np.stack([reused['median']-reused.q1,reused.q3-reused['median']]),
-                fmt='s',color=ORANGE,capsize=5,label='Reused earlier coarse measurements')
+    curve(ax,refined,'threshold',label='Distinct recursion partitions')
     ax.axvline(selected,color='#555555',ls='--',label=f'Selected S={selected}')
     ax.set(xlabel='Threshold S',ylabel='CPU time (seconds)',title=f'Refined tuning at n={target:,}'); ax.legend()
     save(fig,'05_refinement')
@@ -125,7 +120,8 @@ def main():
         part=summary(df,['experiment','algorithm','n','threshold'],metric); part['metric']=metric; full_summary.append(part)
     pd.concat(full_summary).to_csv(args.results/'summary.csv',index=False)
     near=refined[refined['median']<=refined['median'].min()*1.01].threshold.astype(int).tolist()
-    count_candidates=tuned.dropna(subset=['key_comparisons']).pivot(index='seed',columns='threshold',values='key_comparisons')
+    count_candidates=coarse[coarse.n.eq(target)].dropna(subset=['key_comparisons']).pivot(
+        index='seed',columns='threshold',values='key_comparisons')
     equal_counts=[int(s) for s in count_candidates if count_candidates[s].equals(count_candidates[selected])]
     count_medians=count_candidates.median()
     comparison_winner=int(min(count_medians.index,key=lambda s:(count_medians[s],s)))
@@ -134,7 +130,7 @@ def main():
 - Machine: {metadata['cpu']}; {metadata['platform']}.
 - Selected threshold: **S={selected}**, using tuning seeds only.
 - Coarse winners by n: {selection['coarse_winners_by_n']}.
-- Refinement interval: [{low}, {high}].
+- Refinement interval: [{low}, {high}], testing distinct-partition representatives {selection['refinement_candidates']}.
 - Thresholds within 1% of the best measured tuning median: {near}. This is a descriptive band, not a significance test.
 - Minimum median comparison count among tested candidates at n={target:,}: **S={comparison_winner}** (smallest threshold breaks ties).
 - Candidates matching the selected threshold's comparison counts on every tuning seed: {equal_counts}. Matching counts alone do not prove structural equivalence; inspect the recursive leaf sizes.
@@ -147,17 +143,17 @@ def main():
 
 ## Interpretation safeguards
 
-The selected threshold is the best observed candidate, not a universal optimum. Adjacent thresholds can yield identical recursion leaves and therefore identical comparison counts; timing differences within such groups are noise or execution variation. Five seeds and IQRs describe variation, not confidence intervals. Fine-search configurations were measured after the coarse sweep, so machine drift can affect selection. The refinement plot separates the two phases: systematic differences within an equivalent-work plateau must not be attributed to S alone. Held-out paired validation is the main evidence for the final performance claim. Small-n CPU measurements are sensitive to timer resolution.
+The selected threshold is the best observed distinct recursion partition, not a universal optimum. Adjacent thresholds can yield identical recursion leaves and therefore identical work; the refinement tests one representative per distinct partition. Five seeds and IQRs describe variation, not confidence intervals. Held-out paired validation is the main evidence for the final performance claim. Small-n CPU measurements are sensitive to timer resolution.
 '''
     (args.results/'findings.md').write_text(report)
     if not metadata['smoke']:
         content=f'''# Measured slide content — full assignment run
 
-These statements are generated from `results/full/measurements.csv`. Refer to the blueprint for speaker notes and timings.
+These statements are generated from the selected full-run `measurements.csv`. Refer to the blueprint for speaker notes and timings.
 
 ## Slide 4: method footer
 
-**{metadata['cpu']} · {toolchain} · uniform integers [1, 10⁷] · five seeds × three repetitions.**
+**{metadata['cpu']} · {toolchain} · uniform integers [1, 10⁷] · five seeds × {metadata['repetitions']} repetitions.**
 
 ## Slide 5: result headline
 
@@ -167,13 +163,13 @@ The normalized ratio C/(n log₂n) ranges from **{normalized['median'].min():.3f
 
 ## Slide 6: result callout
 
-**Selected S={selected} after coarse search and integer refinement at 10 million elements.**
+**Selected S={selected} after coarse search and partition-aware refinement at 10 million elements.**
 
-Coarse winners: {selection['coarse_winners_by_n']}. Refined interval: [{low}, {high}]. Candidates within 1% of the best median: {near}. Describe this as a measured fast region; do not claim each tiny timing difference is meaningful.
+Coarse winners: {selection['coarse_winners_by_n']}. Refined interval: [{low}, {high}], with distinct-partition representatives {selection['refinement_candidates']}. Candidates within 1% of the best median: {near}. Describe this as a measured fast region; do not claim each tiny timing difference is meaningful.
 
 The comparison-count winner at 10 million is **S={comparison_winner}**, while the CPU-time winner is **S={selected}**. Candidates with identical observed comparison counts to the selected threshold: {equal_counts}.
 
-The refinement graph distinguishes reused coarse observations from later measurements. Their timing differences within the same leaf partition show why the exact rank is not established robustly. The held-out hybrid-versus-original comparison supports the final speedup claim.
+The refinement phase retests comparable structural candidates together and avoids ranking thresholds that produce identical recursion leaves. The held-out hybrid-versus-original comparison supports the final speedup claim.
 
 ## Slide 7: result headline
 
@@ -189,7 +185,7 @@ Paired speedup IQR: **{ratios.quantile(.25):.3f}–{ratios.quantile(.75):.3f}×*
 
 ## Slide 8: three conclusions
 
-1. Correctness: optimized and sanitizer checks passed; every recorded sort matched its reference.
+1. Correctness: the Java correctness suite passed; every recorded sort matched its reference.
 2. Complexity: fixed-S measurements are consistent with the derived n log n growth; threshold changes affect both leaf work and merge levels.
 3. Performance: on this machine and distribution, the selected hybrid achieved **{speedup:.3f}×** paired median speedup with **{change:+.1f}%** comparisons.
 

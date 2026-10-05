@@ -1,0 +1,7 @@
+experiment,algorithm,n,threshold,seed,repetition,key_comparisons,cpu_seconds,elapsed_seconds,correct
+fixed_s,hybrid,300000,32,303,0,5709417,,,true
+fixed_s,hybrid,300000,32,303,3,,0.0186760000000,0.0189289170000,true
+fixed_s,hybrid,300000,32,303,5,,0.0161670000000,0.0162866670000,true
+fixed_s,hybrid,300000,32,303,1,,0.0161350000000,0.0162442080000,true
+fixed_s,hybrid,300000,32,303,2,,0.0161700000000,0.0163296670000,true
+fixed_s,hybrid,300000,32,303,4,,0.0158720000000,0.0159221250000,true

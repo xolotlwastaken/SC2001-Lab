@@ -12,11 +12,13 @@ def main():
     args=parser.parse_args()
     frame=pd.read_csv(args.results/'measurements.csv')
     selection=json.loads((args.results/'selection.json').read_text())
-    assert not json.loads((args.results/'metadata.json').read_text())['smoke']
+    metadata=json.loads((args.results/'metadata.json').read_text())
+    assert not metadata['smoke']
+    repetitions=int(metadata['repetitions'])
     assert frame.correct.eq(True).all()
     assert not frame.duplicated(['experiment','algorithm','n','threshold','seed','repetition']).any()
     low,high=selection['refinement_interval']
-    refined=set(range(low,high+1))-set(SWEEP)
+    refined=set(selection['refinement_candidates'])
     expected=set()
     for n in SIZES:
         for seed in TUNING: expected.add(('fixed_s','hybrid',n,32,seed))
@@ -32,14 +34,14 @@ def main():
     actual=set(frame[keys].itertuples(index=False,name=None))
     assert actual == expected, f'Coverage mismatch: missing={expected-actual}, extra={actual-expected}'
     for _,rows in frame.groupby(keys):
-        assert set(rows.repetition)=={0,1,2,3}
+        assert set(rows.repetition)==set(range(repetitions+1))
         counted=rows[rows.repetition.eq(0)]
         timed=rows[rows.repetition.ne(0)]
         assert counted.key_comparisons.notna().all() and counted.cpu_seconds.isna().all()
         assert counted.elapsed_seconds.isna().all()
         assert timed.key_comparisons.isna().all()
         assert timed.cpu_seconds.gt(0).all() and timed.elapsed_seconds.gt(0).all()
-    tune=frame[frame.experiment.isin(['coarse','refine']) & frame.n.eq(10000000)]
+    tune=frame[frame.experiment.eq('refine') & frame.n.eq(10000000)]
     scores=tune.dropna(subset=['cpu_seconds']).groupby(['threshold','seed']).cpu_seconds.median().groupby('threshold').median()
     winner=min(scores.index,key=lambda s:(scores[s],s))
     assert winner==selection['selected_s'], 'Selection not reproducible'

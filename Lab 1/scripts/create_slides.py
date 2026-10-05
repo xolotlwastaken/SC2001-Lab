@@ -111,16 +111,37 @@ text(s,'Worst-case bound for 1 ≤ S ≤ n; not an exact random-input count.',1,
 for x,title,body in [(.65,'Fixed S','Θ(n log n) worst case'),(4.8,'S = 1','Ordinary merge sort'),(8.95,'S ≥ n','Insertion sort: O(n²) worst case')]: callout(s,title,body,x,5.45,3.75,1.15)
 note(s,'60 seconds. Auxiliary storage O(n), plus O(log(n/S)+1) recursive stack depth for 1≤S≤n. Do not claim differentiation of the bound identifies a universal threshold.',3)
 
-# 4 — clear experiment protocol.
-s=slide('Choose S on tuning data; validate on fresh data','EXPERIMENTAL METHOD / (b)–(d) / 2:40–3:30')
-items=[('01  Generate','Uniform integers in [1, 10⁷]\nNine sizes: 10³ to 10⁷'),('02  Tune','Five seeds × three repetitions\nCoarse sweep, then integer refinement'),('03  Validate','Lock S before testing\nFive fresh 10m-element datasets')]
-for i,(title,body) in enumerate(items): callout(s,title,body,.65+i*4.2,1.95,3.95,1.65)
-text(s,'Fair timing',.75,4.05,5.7,.4,24,BLUE,True)
-text(s,'Same arrays across candidates\nWarm-up + shuffled run order\nTime sorting only; compile counters out',.75,4.65,5.7,1.7,21)
-text(s,'Trustworthy evidence',7,4.05,5.5,.4,24,BLUE,True)
-text(s,'Every output checked against std::sort\nMedian within seed, then across seeds\nError bands = IQR, not confidence intervals',7,4.65,5.5,1.7,21)
-text(s,'Apple M5  •  C++17 / Apple clang 21 / -O3  •  separate key-comparison passes',.75,6.55,12,.3,15,MUTED)
-note(s,'50 seconds. CPU means process CPU via std::clock, not elapsed wall time. Generation, copying, allocations, checks and CSV output are outside timing. See appendix for exact seeds and counting definitions.',4)
+# 4 — experiment flow: make the data journey explicit.
+s=slide('Experiment flow: from generated arrays to a fair comparison','PART (b) → (c) → (d) / 2:40–3:30')
+text(s,'Part (b) creates the inputs. We then use those inputs to choose S and test it on fresh data.',.7,1.52,12,.38,18,MUTED)
+
+# Three stages with explicit “what” and “why”, connected by directional arrows.
+stages=[
+    ('01','GENERATE','Uniform integers in [1, 10⁷]\n9 sizes: 1,000 → 10,000,000','Why: isolate the effect of n',BLUE),
+    ('02','TUNE S','Sweep candidate thresholds\n5 seeds × 3 timing repeats\nChoose the lowest median CPU time','Why: find a fast S before testing it',ORANGE),
+    ('03','VALIDATE','Lock S = 64 before testing\n5 fresh 10m-element arrays\nCompare merge sort vs hybrid','Why: avoid choosing S on test data',GREEN),
+]
+for i,(num,title,body,why,color) in enumerate(stages):
+    x=.65+i*4.22
+    box(s,x,2.08,3.72,2.55,LIGHT,line='D5E0E8',radius=True)
+    box(s,x+.2,2.3,.55,.55,color)
+    text(s,num,x+.2,2.38,.55,.25,15,WHITE,True,align=PP_ALIGN.CENTER)
+    text(s,title,x+.92,2.34,2.5,.35,19,color,True)
+    text(s,body,x+.22,2.98,3.28,1.18,15,NAVY)
+    text(s,why,x+.22,4.24,3.28,.25,13,MUTED,True)
+    if i<2:
+        line=s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x+3.76),Inches(3.35),Inches(x+4.12),Inches(3.35))
+        line.line.color.rgb=RGBColor.from_string(MUTED); line.line.width=Pt(2.5)
+        line.line.end_arrowhead=True
+
+# Controls are subordinate to the flow, but remain visible for marks on methodology.
+box(s,.65,5.05,12.0,1.18,'F7FAFC',line='D5E0E8',radius=True)
+text(s,'CONTROLS HELD CONSTANT',.9,5.23,3.1,.28,14,BLUE,True)
+text(s,'Same array for every candidate',.9,5.67,3.55,.3,16,NAVY,True)
+text(s,'Warm-up + shuffled run order',4.67,5.67,3.35,.3,16,NAVY,True)
+text(s,'Sort only is timed; counters run separately',8.25,5.67,4.0,.3,16,NAVY,True)
+text(s,'Every output checked against std::sort  •  Apple M5 / C++17 / -O3',.75,6.55,12,.3,15,MUTED)
+note(s,'50 seconds. Walk left to right: first explain what Part (b) generates, then explain that threshold tuning is a separate stage, then explain why validation uses fresh arrays after S is locked. The lower strip gives the fairness controls without interrupting the main story. CPU time is process CPU via std::clock; generation, copying, allocation, checks and CSV output are excluded. Error bars later are IQRs, not confidence intervals.',4)
 
 # 5 — fixed S graph.
 s=slide('Fixed S: comparison growth agrees with n log n','EMPIRICAL ANALYSIS / (c)(i) / 3:30–4:25')
